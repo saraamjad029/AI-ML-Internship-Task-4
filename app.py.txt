@@ -1,0 +1,53 @@
+import streamlit as st
+import joblib
+import numpy as np
+
+# Page configuration
+st.set_page_config(page_title="Student Performance Predictor", page_icon="🎓", layout="centered")
+
+# Load saved model and scaler artifacts safely
+@st.cache_resource
+def load_artifacts():
+    model = joblib.load('best_model.pkl')
+    scaler = joblib.load('scaler.pkl')
+    return model, scaler
+
+model, scaler = load_artifacts()
+
+# UI Header
+st.title("🎓 Student Performance Prediction System")
+st.write("Welcome! This application predicts whether a student is likely to **Pass** or **Fail** based on core academic indicators.")
+
+st.divider()
+
+# Sidebar inputs for user interaction
+st.sidebar.header("Input Student Metrics")
+study_hours = st.sidebar.slider("Study Hours / Weekly Engagement", 0.0, 10.0, 5.0)
+attendance = st.sidebar.slider("Attendance Rate (%)", 0.0, 100.0, 75.0)
+previous_score = st.sidebar.slider("Previous Semester Average Score", 0.0, 100.0, 65.0)
+assignments_done = st.sidebar.slider("Assignments Completed", 0.0, 50.0, 20.0)
+
+# Main Dashboard Layout
+st.subheader("Predictive Analytics Dashboard")
+
+if st.button("Run Prediction Analysis", type="primary"):
+    # Construct raw feature array (matching the 10 training features, padding remaining with zeros)
+    raw_input = np.array([[study_hours, attendance, previous_score, assignments_done, 0, 0, 0, 0, 0, 0]])
+    
+    # Scale input data using the saved scaler
+    scaled_input = scaler.transform(raw_input)
+    
+    # Perform Inference
+    prediction = model.predict(scaled_input)
+    probability = model.predict_proba(scaled_input)
+    
+    # Render Results Visually
+    if prediction[0] == 1:
+        st.success("### Result: The student is predicted to **PASS**! 🎉")
+        st.write(f"**Confidence Score:** {probability[0][1]*100:.2f}%")
+    else:
+        st.error("### Result: The student is predicted to **FAIL**. ⚠️")
+        st.write(f"**Confidence Score:** {probability[0][0]*100:.2f}%")
+
+st.divider()
+st.caption("Devixo Solutions AI/ML Internship | Task 4 End-to-End Application Submission")
